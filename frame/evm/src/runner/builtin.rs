@@ -35,16 +35,16 @@ use evm::{
 use evm_runtime::{Config, Handler as HandlerT};
 use evm_gasometer::{self as gasometer, Gasometer};
 use crate::{
-	Trait, Vicinity, Module, Event, Log, AccountCodes, AccountStorages, AddressMapping,
+	Config as ConfigT, Vicinity, Module, Event, Log, AccountCodes, AccountStorages, AddressMapping,
 	Runner as RunnerT, Error, CallInfo, CreateInfo, FeeCalculator, precompiles::Precompiles,
 };
 
 #[derive(Default)]
-pub struct Runner<T: Trait> {
+pub struct Runner<T: ConfigT> {
 	_marker: PhantomData<T>,
 }
 
-impl<T: Trait> RunnerT<T> for Runner<T> {
+impl<T: ConfigT> RunnerT<T> for Runner<T> {
 	type Error = Error<T>;
 
 	fn call(
@@ -280,7 +280,7 @@ fn l64(gas: usize) -> usize {
 	gas - gas / 64
 }
 
-pub struct Handler<'vicinity, 'config, T: Trait> {
+pub struct Handler<'vicinity, 'config, T: ConfigT> {
 	vicinity: &'vicinity Vicinity,
 	config: &'config Config,
 	gasometer: Gasometer<'config>,
@@ -292,7 +292,7 @@ pub struct Handler<'vicinity, 'config, T: Trait> {
 	_marker: PhantomData<T>,
 }
 
-impl<'vicinity, 'config, T: Trait> Handler<'vicinity, 'config, T> {
+impl<'vicinity, 'config, T: ConfigT> Handler<'vicinity, 'config, T> {
 	/// Create a new handler with given vicinity.
 	pub fn new_with_precompile(
 		vicinity: &'vicinity Vicinity,
@@ -411,7 +411,7 @@ impl<'vicinity, 'config, T: Trait> Handler<'vicinity, 'config, T> {
 	}
 }
 
-impl<'vicinity, 'config, T: Trait> HandlerT for Handler<'vicinity, 'config, T> {
+impl<'vicinity, 'config, T: ConfigT> HandlerT for Handler<'vicinity, 'config, T> {
 	type CreateInterrupt = Infallible;
 	type CreateFeedback = Infallible;
 	type CallInterrupt = Infallible;
@@ -782,7 +782,7 @@ impl<'vicinity, 'config, T: Trait> HandlerT for Handler<'vicinity, 'config, T> {
 	}
 }
 
-impl<'vicinity, 'config, T: Trait> Drop for Handler<'vicinity, 'config, T> {
+impl<'vicinity, 'config, T: ConfigT> Drop for Handler<'vicinity, 'config, T> {
 	fn drop(&mut self) {
 		let mut deleted = BTreeSet::new();
 		mem::swap(&mut deleted, &mut self.deleted);

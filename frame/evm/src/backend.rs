@@ -26,7 +26,7 @@ use frame_support::traits::Get;
 use frame_support::{debug, storage::{StorageMap, StorageDoubleMap}};
 use sha3::{Keccak256, Digest};
 use evm::backend::{Backend as BackendT, ApplyBackend, Apply};
-use crate::{Trait, AccountStorages, AccountCodes, Module, Event};
+use crate::{Config, AccountStorages, AccountCodes, Module, Event};
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Default)]
 #[cfg_attr(feature = "std", derive(Debug, Serialize, Deserialize))]
@@ -73,7 +73,7 @@ impl<'vicinity, T> Backend<'vicinity, T> {
 	}
 }
 
-impl<'vicinity, T: Trait> BackendT for Backend<'vicinity, T> {
+impl<'vicinity, T: Config> BackendT for Backend<'vicinity, T> {
 	fn gas_price(&self) -> U256 { self.vicinity.gas_price }
 	fn origin(&self) -> H160 { self.vicinity.origin }
 
@@ -142,7 +142,7 @@ impl<'vicinity, T: Trait> BackendT for Backend<'vicinity, T> {
 	}
 }
 
-impl<'vicinity, T: Trait> ApplyBackend for Backend<'vicinity, T> {
+impl<'vicinity, T: Config> ApplyBackend for Backend<'vicinity, T> {
 	fn apply<A, I, L>(
 		&mut self,
 		values: A,

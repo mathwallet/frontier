@@ -32,6 +32,7 @@ evm-gasometer = { version = "0.19.0", default-features = false }
 sha3 = { version = "0.8", default-features = false }
 impl-trait-for-tuples = "0.1"
 ripemd160 = { version = "0.9", default-features = false }
+pallet-account-service = { default-features = false, path = "../../../../pallets/account-service"}
 
 [features]
 default = ["std"]
@@ -54,5 +55,6 @@ std = [
 	"evm-runtime/std",
 	"evm-gasometer/std",
 	"pallet-timestamp/std",
+	"pallet-account-service/std",
 	"ripemd160/std",
 ]

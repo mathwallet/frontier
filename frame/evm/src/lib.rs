@@ -55,11 +55,12 @@
 
 mod tests;
 pub mod runner;
-pub mod precompiles;
 
-pub use crate::precompiles::{Precompile, Precompiles};
 pub use crate::runner::Runner;
-pub use fp_evm::{Account, Log, Vicinity, ExecutionInfo, CallInfo, CreateInfo};
+pub use fp_evm::{
+	Account, Log, Vicinity, ExecutionInfo, CallInfo, CreateInfo, Precompile,
+	PrecompileSet, LinearCostPrecompile,
+};
 pub use evm::{ExitReason, ExitSucceed, ExitError, ExitRevert, ExitFatal};
 
 use sp_std::vec::Vec;
@@ -72,9 +73,9 @@ use frame_support::weights::{Weight, Pays, PostDispatchInfo};
 use frame_support::traits::{Currency, ExistenceRequirement, Get};
 use frame_support::dispatch::DispatchResultWithPostInfo;
 use frame_system::RawOrigin;
-use sp_core::{U256, H256, H160, Hasher};
+use sp_core::{U256, H256, H160};
 use sp_runtime::{AccountId32, traits::{UniqueSaturatedInto, BadOrigin}};
-use evm::Config as ConfigT;
+use evm::Config as EvmConfig;
 
 use pallet_account_service::AccountServiceEnum;
 /// Type alias for currency balance.
@@ -195,7 +196,7 @@ impl AddressMapping<H160> for IdentityAddressMapping {
 }
 
 /// Hashed address mapping.
-pub struct HashedAddressMapping<T>(sp_std::marker::PhantomData<(T)>);
+pub struct HashedAddressMapping<T>(sp_std::marker::PhantomData<T>);
 
 impl<T: pallet_account_service::Config> AddressMapping<AccountId32> for HashedAddressMapping<T> 
 where 
@@ -217,26 +218,30 @@ where
 }
 
 /// A mapping function that converts Ethereum gas to Substrate weight
-pub trait GasToWeight {
-	fn gas_to_weight(gas: u32) -> Weight;
+pub trait GasWeightMapping {
+	fn gas_to_weight(gas: usize) -> Weight;
+	fn weight_to_gas(weight: Weight) -> usize;
 }
 
-impl GasToWeight for () {
-	fn gas_to_weight(gas: u32) -> Weight {
+impl GasWeightMapping for () {
+	fn gas_to_weight(gas: usize) -> Weight {
 		gas as Weight
+	}
+	fn weight_to_gas(weight: Weight) -> usize {
+		weight as usize
 	}
 }
 
 /// Substrate system chain ID.
-pub struct SystemChainId;
+// pub struct SystemChainId;
 
-impl Get<u64> for SystemChainId {
-	fn get() -> u64 {
-		sp_io::misc::chain_id()
-	}
-}
+// impl Get<u64> for SystemChainId {
+// 	fn get() -> u64 {
+// 		sp_io::misc::chain_id()
+// 	}
+// }
 
-static ISTANBUL_CONFIG: ConfigT = ConfigT::istanbul();
+static ISTANBUL_CONFIG: EvmConfig = EvmConfig::istanbul();
 
 /// EVM module trait
 pub trait Config: frame_system::Config + pallet_timestamp::Config {
@@ -244,7 +249,7 @@ pub trait Config: frame_system::Config + pallet_timestamp::Config {
 	type FeeCalculator: FeeCalculator;
 
 	/// Maps Ethereum gas to Substrate weight.
-	type GasToWeight: GasToWeight;
+	type GasWeightMapping: GasWeightMapping;
 
 	/// Allow the origin to call on behalf of given address.
 	type CallOrigin: EnsureAddressOrigin<Self::Origin>;
@@ -259,14 +264,14 @@ pub trait Config: frame_system::Config + pallet_timestamp::Config {
 	/// The overarching event type.
 	type Event: From<Event<Self>> + Into<<Self as frame_system::Config>::Event>;
 	/// Precompiles associated with this EVM engine.
-	type Precompiles: Precompiles;
+	type Precompiles: PrecompileSet;
 	/// Chain ID of EVM.
 	type ChainId: Get<u64>;
 	/// EVM execution runner.
 	type Runner: Runner<Self>;
 
 	/// EVM config used in the module.
-	fn config() -> &'static ConfigT {
+	fn config() -> &'static EvmConfig {
 		&ISTANBUL_CONFIG
 	}
 }
@@ -379,7 +384,7 @@ decl_module! {
 		}
 
 		/// Issue an EVM call operation. This is similar to a message call transaction in Ethereum.
-		#[weight = T::GasToWeight::gas_to_weight(*gas_limit)]
+		#[weight = T::GasWeightMapping::gas_to_weight(*gas_limit as usize)]
 		fn call(
 			origin,
 			source: H160,
@@ -413,14 +418,14 @@ decl_module! {
 			};
 
 			Ok(PostDispatchInfo {
-				actual_weight: Some(T::GasToWeight::gas_to_weight(info.used_gas.low_u32())),
+				actual_weight: Some(T::GasWeightMapping::gas_to_weight(info.used_gas.unique_saturated_into())),
 				pays_fee: Pays::No,
 			})
 		}
 
 		/// Issue an EVM create operation. This is similar to a contract creation transaction in
 		/// Ethereum.
-		#[weight = T::GasToWeight::gas_to_weight(*gas_limit)]
+		#[weight = T::GasWeightMapping::gas_to_weight(*gas_limit as usize)]
 		fn create(
 			origin,
 			source: H160,
@@ -460,13 +465,13 @@ decl_module! {
 			}
 
 			Ok(PostDispatchInfo {
-				actual_weight: Some(T::GasToWeight::gas_to_weight(info.used_gas.low_u32())),
+				actual_weight: Some(T::GasWeightMapping::gas_to_weight(info.used_gas.unique_saturated_into())),
 				pays_fee: Pays::No,
 			})
 		}
 
 		/// Issue an EVM create2 operation.
-		#[weight = T::GasToWeight::gas_to_weight(*gas_limit)]
+		#[weight = T::GasWeightMapping::gas_to_weight(*gas_limit as usize)]
 		fn create2(
 			origin,
 			source: H160,
@@ -508,7 +513,7 @@ decl_module! {
 			}
 
 			Ok(PostDispatchInfo {
-				actual_weight: Some(T::GasToWeight::gas_to_weight(info.used_gas.low_u32())),
+				actual_weight: Some(T::GasWeightMapping::gas_to_weight(info.used_gas.unique_saturated_into())),
 				pays_fee: Pays::No,
 			})
 		}

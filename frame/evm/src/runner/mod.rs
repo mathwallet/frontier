@@ -21,7 +21,7 @@ pub mod builtin;
 use sp_std::vec::Vec;
 use sp_core::{H160, U256, H256};
 use fp_evm::{CallInfo, CreateInfo};
-pub use frame_system::Config;
+use crate::Config;
 
 pub trait Runner<T: Config> {
 	type Error: Into<sp_runtime::DispatchError>;

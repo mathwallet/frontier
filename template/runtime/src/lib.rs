@@ -48,6 +48,7 @@ use pallet_evm::{
 };
 use fp_rpc::{TransactionStatus};
 pub type BlockNumber = u32;
+use pallet_transaction_payment::CurrencyAdapter;
 
 /// Alias to 512-bit hash when used in the context of a transaction signature on the chain.
 pub type Signature = MultiSignature;
@@ -256,8 +257,7 @@ parameter_types! {
 }
 
 impl pallet_transaction_payment::Config for Runtime {
-	type Currency = Balances;
-	type OnTransactionPayment = ();
+	type OnChargeTransaction = CurrencyAdapter<Balances, ()>;
 	type TransactionByteFee = TransactionByteFee;
 	type WeightToFee = IdentityFee<Balance>;
 	type FeeMultiplierUpdate = ();
@@ -284,7 +284,7 @@ parameter_types! {
 
 impl pallet_evm::Config for Runtime {
 	type FeeCalculator = FixedGasPrice;
-	type GasToWeight = ();
+	type GasWeightMapping = ();
 	type CallOrigin = EnsureAddressTruncated;
 	type WithdrawOrigin = EnsureAddressTruncated;
 	type AddressMapping = HashedAddressMapping<BlakeTwo256>;
@@ -292,10 +292,10 @@ impl pallet_evm::Config for Runtime {
 	type Event = Event;
 	type Runner = pallet_evm::runner::stack::Runner<Self>;
 	type Precompiles = (
-		pallet_evm::precompiles::ECRecover,
-		pallet_evm::precompiles::Sha256,
-		pallet_evm::precompiles::Ripemd160,
-		pallet_evm::precompiles::Identity,
+		pallet_evm_precompile_simple::ECRecover,
+		pallet_evm_precompile_simple::Sha256,
+		pallet_evm_precompile_simple::Ripemd160,
+		pallet_evm_precompile_simple::Identity,
 	);
 	type ChainId = ChainId;
 }

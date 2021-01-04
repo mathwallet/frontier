@@ -110,7 +110,7 @@ impl FeeCalculator for FixedGasPrice {
 
 impl Config for Test {
 	type FeeCalculator = FixedGasPrice;
-	type GasToWeight = ();
+	type GasWeightMapping = ();
 
 	type CallOrigin = EnsureAddressRoot<Self::AccountId>;
 	type WithdrawOrigin = EnsureAddressNever<Self::AccountId>;
@@ -121,7 +121,7 @@ impl Config for Test {
 
 	type Event = Event<Test>;
 	type Precompiles = ();
-	type ChainId = SystemChainId;
+	type ChainId = U64;
 }
 
 type System = frame_system::Module<Test>;

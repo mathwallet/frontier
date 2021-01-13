@@ -22,7 +22,7 @@ frame-system-rpc-runtime-api = { version = "2.0.0-dev", default-features = false
 pallet-ethereum = { version = "0.1.0", default-features = false, path = "../../frame/ethereum" }
 pallet-evm = { version = "2.0.0-dev", default-features = false, path = "../../frame/evm" }
 pallet-aura = { version = "2.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
-pallet-balances = { version = "2.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
+pallet-balances = { version = "2.0.0-dev", default-features = false, path = "../../../../frame/balances" }
 pallet-grandpa = { version = "2.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 pallet-randomness-collective-flip = { version = "2.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 pallet-sudo = { version = "2.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }

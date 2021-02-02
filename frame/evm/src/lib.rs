@@ -219,27 +219,18 @@ where
 
 /// A mapping function that converts Ethereum gas to Substrate weight
 pub trait GasWeightMapping {
-	fn gas_to_weight(gas: usize) -> Weight;
-	fn weight_to_gas(weight: Weight) -> usize;
+	fn gas_to_weight(gas: u64) -> Weight;
+	fn weight_to_gas(weight: Weight) -> u64;
 }
 
 impl GasWeightMapping for () {
-	fn gas_to_weight(gas: usize) -> Weight {
+	fn gas_to_weight(gas: u64) -> Weight {
 		gas as Weight
 	}
-	fn weight_to_gas(weight: Weight) -> usize {
-		weight as usize
+	fn weight_to_gas(weight: Weight) -> u64 {
+		weight as u64
 	}
 }
-
-/// Substrate system chain ID.
-// pub struct SystemChainId;
-
-// impl Get<u64> for SystemChainId {
-// 	fn get() -> u64 {
-// 		sp_io::misc::chain_id()
-// 	}
-// }
 
 static ISTANBUL_CONFIG: EvmConfig = EvmConfig::istanbul();
 
@@ -384,14 +375,14 @@ decl_module! {
 		}
 
 		/// Issue an EVM call operation. This is similar to a message call transaction in Ethereum.
-		#[weight = T::GasWeightMapping::gas_to_weight(*gas_limit as usize)]
+		#[weight = T::GasWeightMapping::gas_to_weight(*gas_limit)]
 		fn call(
 			origin,
 			source: H160,
 			target: H160,
 			input: Vec<u8>,
 			value: U256,
-			gas_limit: u32,
+			gas_limit: u64,
 			gas_price: U256,
 			nonce: Option<U256>,
 		) -> DispatchResultWithPostInfo {
@@ -425,13 +416,13 @@ decl_module! {
 
 		/// Issue an EVM create operation. This is similar to a contract creation transaction in
 		/// Ethereum.
-		#[weight = T::GasWeightMapping::gas_to_weight(*gas_limit as usize)]
+		#[weight = T::GasWeightMapping::gas_to_weight(*gas_limit)]
 		fn create(
 			origin,
 			source: H160,
 			init: Vec<u8>,
 			value: U256,
-			gas_limit: u32,
+			gas_limit: u64,
 			gas_price: U256,
 			nonce: Option<U256>,
 		) -> DispatchResultWithPostInfo {
@@ -471,14 +462,14 @@ decl_module! {
 		}
 
 		/// Issue an EVM create2 operation.
-		#[weight = T::GasWeightMapping::gas_to_weight(*gas_limit as usize)]
+		#[weight = T::GasWeightMapping::gas_to_weight(*gas_limit)]
 		fn create2(
 			origin,
 			source: H160,
 			init: Vec<u8>,
 			salt: H256,
 			value: U256,
-			gas_limit: u32,
+			gas_limit: u64,
 			gas_price: U256,
 			nonce: Option<U256>,
 		) -> DispatchResultWithPostInfo {

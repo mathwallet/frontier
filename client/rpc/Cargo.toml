@@ -16,16 +16,16 @@ ethereum-types = "0.10.0"
 fc-consensus = { path = "../consensus" }
 fc-rpc-core = { path = "../rpc-core" }
 fp-rpc = { path = "../../primitives/rpc" }
-sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
-sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
-sp-api = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
-sp-transaction-pool = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
-sp-storage = { git = "https://github.com/paritytech/substrate.git", branch = "master" } 
-sp-blockchain = { git = "https://github.com/paritytech/substrate.git", branch = "master" } 
-sc-service = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
-sc-client-api = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
-sc-rpc = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
-sc-network = { git = "https://github.com/paritytech/substrate.git", branch = "master" }
+sp-io = { git = "https://github.com/paritytech/substrate.git", branch = "rococo-v1" }
+sp-runtime = { git = "https://github.com/paritytech/substrate.git", branch = "rococo-v1" }
+sp-api = { git = "https://github.com/paritytech/substrate.git", branch = "rococo-v1" }
+sp-transaction-pool = { git = "https://github.com/paritytech/substrate.git", branch = "rococo-v1" }
+sp-storage = { git = "https://github.com/paritytech/substrate.git", branch = "rococo-v1" } 
+sp-blockchain = { git = "https://github.com/paritytech/substrate.git", branch = "rococo-v1" } 
+sc-service = { git = "https://github.com/paritytech/substrate.git", branch = "rococo-v1" }
+sc-client-api = { git = "https://github.com/paritytech/substrate.git", branch = "rococo-v1" }
+sc-rpc = { git = "https://github.com/paritytech/substrate.git", branch = "rococo-v1" }
+sc-network = { git = "https://github.com/paritytech/substrate.git", branch = "rococo-v1" }
 pallet-evm = { path = "../../frame/evm" }
 pallet-ethereum = { path = "../../frame/ethereum" }
 ethereum = { version = "0.6", features = ["with-codec"] }

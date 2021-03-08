@@ -6397,7 +6397,7 @@ dependencies = [
 
 [[package]]
 name = "sp-block-builder"
-version = "2.0.0"
+version = "3.0.0"
 source = "git+https://github.com/paritytech/substrate.git#e5e7606fa54175dfc424b7ca90d60b07a3c3f026"
 dependencies = [
  "parity-scale-codec",

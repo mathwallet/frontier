@@ -27,5 +27,4 @@ std = [
 	"ethereum/std",
 	"rlp/std",
 	"sha3/std",
-
 ]

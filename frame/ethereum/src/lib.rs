@@ -46,7 +46,6 @@ use codec::{Encode, Decode};
 use fp_consensus::{FRONTIER_ENGINE_ID, PostLog, PreLog};
 use fp_storage::PALLET_ETHEREUM_SCHEMA;
 
-
 pub use fp_rpc::TransactionStatus;
 pub use ethereum::{Transaction, Log, Block, Receipt, TransactionAction, TransactionMessage};
 
@@ -118,7 +117,6 @@ decl_storage! {
 
 			// Initialize the storage schema at the well known key.
 			frame_support::storage::unhashed::put::<EthereumStorageSchema>(&PALLET_ETHEREUM_SCHEMA, &EthereumStorageSchema::V1);
-
 		});
 	}
 }

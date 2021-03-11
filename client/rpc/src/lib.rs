@@ -25,6 +25,7 @@ pub use eth::{
 	EthTask,
 };
 pub use eth_pubsub::{EthPubSubApi, EthPubSubApiServer, HexEncodedIdProvider};
+pub use overrides::{StorageOverride, SchemaV1Override};
 
 use ethereum_types::{H160, H256};
 use ethereum::{

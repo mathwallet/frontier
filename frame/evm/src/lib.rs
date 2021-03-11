@@ -73,7 +73,7 @@ use frame_support::weights::{Weight, Pays, PostDispatchInfo};
 use frame_support::traits::{Currency, ExistenceRequirement, Get, WithdrawReasons, Imbalance, OnUnbalanced};
 use frame_support::dispatch::DispatchResultWithPostInfo;
 use frame_system::RawOrigin;
-use sp_core::{U256, H256, H160};
+use sp_core::{U256, H256, H160, Hasher};
 use sp_runtime::{AccountId32, traits::{UniqueSaturatedInto, BadOrigin, Saturating}};
 use evm::Config as EvmConfig;
 
@@ -268,6 +268,11 @@ pub trait Config: frame_system::Config + pallet_timestamp::Config {
 	/// Similar to `OnChargeTransaction` of `pallet_transaction_payment`
 	type OnChargeTransaction: OnChargeEVMTransaction<Self>;
 
+	/// To handle fee deduction for EVM transactions. An example is this pallet being used by `pallet_ethereum`
+	/// where the chain implementing `pallet_ethereum` should be able to configure what happens to the fees
+	/// Similar to `OnChargeTransaction` of `pallet_transaction_payment`
+	type OnChargeTransaction: OnChargeEVMTransaction<Self>;
+
 	/// EVM config used in the module.
 	fn config() -> &'static EvmConfig {
 		&ISTANBUL_CONFIG
@@ -290,8 +295,8 @@ pub struct GenesisAccount {
 
 decl_storage! {
 	trait Store for Module<T: Config> as EVM {
-			pub AccountCodes get(fn account_codes): map hasher(blake2_128_concat) H160 => Vec<u8>;
-			pub AccountStorages get(fn account_storages):
+		pub AccountCodes get(fn account_codes): map hasher(blake2_128_concat) H160 => Vec<u8>;
+		pub AccountStorages get(fn account_storages):
 			double_map hasher(blake2_128_concat) H160, hasher(blake2_128_concat) H256 => H256;
 	}
 
@@ -560,7 +565,6 @@ impl<T: Config> Module<T> {
 
 		AccountCodes::insert(address, code);
 	}
-	
 
 	/// Get the account basic in EVM format.
 	pub fn account_basic(address: &H160) -> Account {

@@ -10,8 +10,8 @@ license = "Apache-2.0"
 sp-core = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 sp-api = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 fp-evm = { version = "0.8.0", default-features = false, path = "../../primitives/evm" }
-ethereum = { version = "0.6", default-features = false, features = ["with-codec"] }
-ethereum-types = { version = "0.10", default-features = false }
+ethereum = { version = "0.7.1", default-features = false, features = ["with-codec"] }
+ethereum-types = { version = "0.11", default-features = false }
 codec = { package = "parity-scale-codec", version = "2.0.1", default-features = false }
 sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 sp-std = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }

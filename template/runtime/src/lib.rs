@@ -231,6 +231,9 @@ parameter_types! {
 	// For weight estimation, we assume that the most locks on an individual account will be 50.
 	// This number may need to be adjusted in the future if this assumption no longer holds true.
 	pub const MaxLocks: u32 = 50;
+	pub const DailyLimit: u64 = 1_000_000_000_000_000_000;
+	pub const MonthlyLimit: u64 = 1_000_000_000_000_000_000;
+	pub const YearlyLimit: u64 = 1_000_000_000_000_000_000;
 }
 
 impl pallet_balances::Config for Runtime {
@@ -243,6 +246,9 @@ impl pallet_balances::Config for Runtime {
 	type ExistentialDeposit = ExistentialDeposit;
 	type AccountStore = System;
 	type WeightInfo = ();
+	type DailyLimit = DailyLimit;
+	type MonthlyLimit = MonthlyLimit;
+	type YearlyLimit = YearlyLimit;
 }
 
 parameter_types! {

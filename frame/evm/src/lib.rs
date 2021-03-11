@@ -268,11 +268,6 @@ pub trait Config: frame_system::Config + pallet_timestamp::Config {
 	/// Similar to `OnChargeTransaction` of `pallet_transaction_payment`
 	type OnChargeTransaction: OnChargeEVMTransaction<Self>;
 
-	/// To handle fee deduction for EVM transactions. An example is this pallet being used by `pallet_ethereum`
-	/// where the chain implementing `pallet_ethereum` should be able to configure what happens to the fees
-	/// Similar to `OnChargeTransaction` of `pallet_transaction_payment`
-	type OnChargeTransaction: OnChargeEVMTransaction<Self>;
-
 	/// EVM config used in the module.
 	fn config() -> &'static EvmConfig {
 		&ISTANBUL_CONFIG

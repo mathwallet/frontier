@@ -29,7 +29,8 @@ use frame_support::{
 	dispatch::DispatchResultWithPostInfo,
 };
 use sp_std::prelude::*;
-use frame_system::ensure_none;
+use frame_system::{ensure_none, RawOrigin};
+use frame_support::{ensure, traits::UnfilteredDispatchable};
 use ethereum_types::{H160, H64, H256, U256, Bloom, BloomInput};
 use sp_runtime::{
 	transaction_validity::{
@@ -39,10 +40,11 @@ use sp_runtime::{
 };
 use evm::ExitReason;
 use fp_evm::CallOrCreateInfo;
-use pallet_evm::{Runner, GasWeightMapping};
+use pallet_evm::{Runner, GasWeightMapping, FeeCalculator};
 use sha3::{Digest, Keccak256};
-use codec::Encode;
-use fp_consensus::{FRONTIER_ENGINE_ID, ConsensusLog};
+use codec::{Encode, Decode};
+use fp_consensus::{FRONTIER_ENGINE_ID, PostLog, PreLog};
+use fp_storage::PALLET_ETHEREUM_SCHEMA;
 
 pub use fp_rpc::TransactionStatus;
 pub use ethereum::{Transaction, Log, Block, Receipt, TransactionAction, TransactionMessage};
@@ -59,8 +61,30 @@ pub enum ReturnValue {
 	Hash(H160),
 }
 
+/// The schema version for Pallet Ethereum's storage
+#[derive(Clone, Debug, Encode, Decode, PartialEq, Eq, PartialOrd, Ord)]
+pub enum EthereumStorageSchema {
+	Undefined,
+	V1,
+}
+
+impl Default for EthereumStorageSchema {
+	fn default() -> Self {
+		Self::Undefined
+	}
+}
+
 /// A type alias for the balance type from this pallet's point of view.
 pub type BalanceOf<T> = <T as pallet_balances::Config>::Balance;
+
+pub struct IntermediateStateRoot;
+
+impl Get<H256> for IntermediateStateRoot {
+	fn get() -> H256 {
+		H256::decode(&mut &sp_io::storage::root()[..])
+			.expect("Node is configured to use the same hash; qed")
+	}
+}
 
 /// Configuration trait for Ethereum pallet.
 pub trait Config: frame_system::Config<Hash=H256> + pallet_balances::Config + pallet_timestamp::Config + pallet_evm::Config {
@@ -68,6 +92,10 @@ pub trait Config: frame_system::Config<Hash=H256> + pallet_balances::Config + pa
 	type Event: From<Event> + Into<<Self as frame_system::Config>::Event>;
 	/// Find author for Ethereum.
 	type FindAuthor: FindAuthor<H160>;
+	/// How Ethereum state root is calculated.
+	type StateRoot: Get<H256>;
+	/// The block gas limit. Can be a simple constant, or an adjustment algorithm in another pallet.
+	type BlockGasLimit: Get<U256>;
 }
 
 decl_storage! {
@@ -84,7 +112,11 @@ decl_storage! {
 	}
 	add_extra_genesis {
 		build(|_config: &GenesisConfig| {
-			<Module<T>>::store_block();
+			// Calculate the ethereum genesis block
+			<Module<T>>::store_block(false);
+
+			// Initialize the storage schema at the well known key.
+			frame_support::storage::unhashed::put::<EthereumStorageSchema>(&PALLET_ETHEREUM_SCHEMA, &EthereumStorageSchema::V1);
 		});
 	}
 }
@@ -103,6 +135,8 @@ decl_error! {
 	pub enum Error for Module<T: Config> {
 		/// Signature is invalid.
 		InvalidSignature,
+		/// Pre-log is present, therefore transact is not allowed.
+		PreLogExists,
 	}
 }
 
@@ -116,6 +150,10 @@ decl_module! {
 		#[weight = <T as pallet_evm::Config>::GasWeightMapping::gas_to_weight(transaction.gas_limit.unique_saturated_into())]
 		fn transact(origin, transaction: ethereum::Transaction) -> DispatchResultWithPostInfo {
 			ensure_none(origin)?;
+			ensure!(
+				fp_consensus::find_pre_log(&frame_system::Module::<T>::digest()).is_err(),
+				Error::<T>::PreLogExists,
+			);
 
 			let source = Self::recover_signer(&transaction)
 				.ok_or_else(|| Error::<T>::InvalidSignature)?;
@@ -194,11 +232,22 @@ decl_module! {
 		}
 
 		fn on_finalize(n: T::BlockNumber) {
-			<Module<T>>::store_block();
+			<Module<T>>::store_block(
+				fp_consensus::find_pre_log(&frame_system::Module::<T>::digest()).is_err(),
+			);
 		}
 
 		fn on_initialize(n: T::BlockNumber) -> Weight {
 			Pending::kill();
+
+			if let Ok(log) = fp_consensus::find_pre_log(&frame_system::Module::<T>::digest()) {
+				let PreLog::Block(block) = log;
+
+				for transaction in block.transactions {
+					let _ = Call::<T>::transact(transaction).dispatch_bypass_filter(RawOrigin::None.into());
+				}
+			}
+
 			0
 		}
 	}
@@ -233,8 +282,12 @@ impl<T: Config> frame_support::unsigned::ValidateUnsigned for Module<T> {
 			}
 
 			let fee = transaction.gas_price.saturating_mul(transaction.gas_limit);
+			let total_payment = transaction.value.saturating_add(fee);
+			if account_data.balance < total_payment {
+				return InvalidTransaction::Payment.into();
+			}
 
-			if account_data.balance < fee {
+			if transaction.gas_price < T::FeeCalculator::min_gas_price() {
 				return InvalidTransaction::Payment.into();
 			}
 
@@ -267,7 +320,7 @@ impl<T: Config> Module<T> {
 		Some(H160::from(H256::from_slice(Keccak256::digest(&pubkey).as_slice())))
 	}
 
-	fn store_block() {
+	fn store_block(post_log: bool) {
 		let mut transactions = Vec::new();
 		let mut statuses = Vec::new();
 		let mut receipts = Vec::new();
@@ -298,7 +351,7 @@ impl<T: Config> Module<T> {
 					frame_system::Module::<T>::block_number()
 				)
 			),
-			gas_limit: U256::from(u32::max_value()), // TODO: set this using Ethereum's gas limit change algorithm.
+			gas_limit: T::BlockGasLimit::get(),
 			gas_used: receipts.clone().into_iter().fold(U256::zero(), |acc, r| acc + r.used_gas),
 			timestamp: UniqueSaturatedInto::<u64>::unique_saturated_into(
 				pallet_timestamp::Module::<T>::get()
@@ -308,34 +361,19 @@ impl<T: Config> Module<T> {
 			nonce: H64::default(),
 		};
 		let mut block = ethereum::Block::new(partial_header, transactions.clone(), ommers);
-		block.header.state_root = {
-			let mut input = [0u8; 64];
-			input[..32].copy_from_slice(&frame_system::Module::<T>::parent_hash()[..]);
-			input[32..64].copy_from_slice(&block.header.hash()[..]);
-			H256::from_slice(Keccak256::digest(&input).as_slice())
-		};
-
-		let mut transaction_hashes = Vec::new();
-
-		for t in &transactions {
-			let transaction_hash = H256::from_slice(
-				Keccak256::digest(&rlp::encode(t)).as_slice()
-			);
-			transaction_hashes.push(transaction_hash);
-		}
+		block.header.state_root = T::StateRoot::get();
 
 		CurrentBlock::put(block.clone());
 		CurrentReceipts::put(receipts.clone());
 		CurrentTransactionStatuses::put(statuses.clone());
 
-		let digest = DigestItem::<T::Hash>::Consensus(
-			FRONTIER_ENGINE_ID,
-			ConsensusLog::EndBlock {
-				block_hash: block.header.hash(),
-				transaction_hashes,
-			}.encode(),
-		);
-		frame_system::Module::<T>::deposit_log(digest.into());
+		if post_log {
+			let digest = DigestItem::<T::Hash>::Consensus(
+				FRONTIER_ENGINE_ID,
+				PostLog::Hashes(fp_consensus::Hashes::from_block(block)).encode(),
+			);
+			frame_system::Module::<T>::deposit_log(digest.into());
+		}
 	}
 
 	fn logs_bloom(logs: Vec<Log>, bloom: &mut Bloom) {
@@ -393,7 +431,7 @@ impl<T: Config> Module<T> {
 					target,
 					input.clone(),
 					value,
-					gas_limit.low_u32(),
+					gas_limit.low_u64(),
 					gas_price,
 					nonce,
 					config.as_ref().unwrap_or(T::config()),
@@ -406,7 +444,7 @@ impl<T: Config> Module<T> {
 					from,
 					input.clone(),
 					value,
-					gas_limit.low_u32(),
+					gas_limit.low_u64(),
 					gas_price,
 					nonce,
 					config.as_ref().unwrap_or(T::config()),

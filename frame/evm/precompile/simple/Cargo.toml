@@ -1,6 +1,6 @@
 [package]
 name = "pallet-evm-precompile-simple"
-version = "2.0.0"
+version = "3.0.0"
 authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2018"
 license = "Apache-2.0"
@@ -12,7 +12,7 @@ description = "Simple precompiles for EVM pallet."
 sp-core = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 sp-io = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 fp-evm = { version = "0.8.0", default-features = false, path = "../../../../primitives/evm" }
-evm = { version = "0.24.0", default-features = false, features = ["with-codec"] }
+evm = { version = "0.25.0", default-features = false, features = ["with-codec"] }
 ripemd160 = { version = "0.9", default-features = false }
 
 [features]

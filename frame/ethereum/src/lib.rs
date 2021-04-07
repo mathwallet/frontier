@@ -30,7 +30,7 @@ use frame_support::{
 };
 use sp_std::prelude::*;
 use frame_system::ensure_none;
-use frame_support::{ensure, traits::UnfilteredDispatchable};
+use frame_support::ensure;
 use ethereum_types::{H160, H64, H256, U256, Bloom, BloomInput};
 use sp_runtime::{
 	transaction_validity::{
@@ -154,16 +154,16 @@ decl_module! {
 			Self::do_transact(transaction)
 		}
 
-		fn on_finalize(n: T::BlockNumber) {
+		fn on_finalize(_n: T::BlockNumber) {
 			<Module<T>>::store_block(
-				fp_consensus::find_pre_log(&frame_system::Module::<T>::digest()).is_err(),
+				fp_consensus::find_pre_log(&frame_system::Pallet::<T>::digest()).is_err(),
 			);
 		}
 
-		fn on_initialize(n: T::BlockNumber) -> Weight {
+		fn on_initialize(_n: T::BlockNumber) -> Weight {
 			Pending::kill();
 
-			if let Ok(log) = fp_consensus::find_pre_log(&frame_system::Module::<T>::digest()) {
+			if let Ok(log) = fp_consensus::find_pre_log(&frame_system::Pallet::<T>::digest()) {
 				let PreLog::Block(block) = log;
 
 				for transaction in block.transactions {
@@ -272,13 +272,13 @@ impl<T: Config> Module<T> {
 			difficulty: U256::zero(),
 			number: U256::from(
 				UniqueSaturatedInto::<u128>::unique_saturated_into(
-					frame_system::Module::<T>::block_number()
+					frame_system::Pallet::<T>::block_number()
 				)
 			),
 			gas_limit: T::BlockGasLimit::get(),
 			gas_used: receipts.clone().into_iter().fold(U256::zero(), |acc, r| acc + r.used_gas),
 			timestamp: UniqueSaturatedInto::<u64>::unique_saturated_into(
-				pallet_timestamp::Module::<T>::get()
+				pallet_timestamp::Pallet::<T>::get()
 			),
 			extra_data: Vec::new(),
 			mix_hash: H256::default(),
@@ -296,7 +296,7 @@ impl<T: Config> Module<T> {
 				FRONTIER_ENGINE_ID,
 				PostLog::Hashes(fp_consensus::Hashes::from_block(block)).encode(),
 			);
-			frame_system::Module::<T>::deposit_log(digest.into());
+			frame_system::Pallet::<T>::deposit_log(digest.into());
 		}
 	}
 
@@ -311,7 +311,7 @@ impl<T: Config> Module<T> {
 
 	fn do_transact(transaction: ethereum::Transaction) -> DispatchResultWithPostInfo {
 		ensure!(
-			fp_consensus::find_pre_log(&frame_system::Module::<T>::digest()).is_err(),
+			fp_consensus::find_pre_log(&frame_system::Pallet::<T>::digest()).is_err(),
 			Error::<T>::PreLogExists,
 		);
 
@@ -393,7 +393,7 @@ impl<T: Config> Module<T> {
 
 	/// Get the author using the FindAuthor trait.
 	pub fn find_author() -> H160 {
-		let digest = <frame_system::Module<T>>::digest();
+		let digest = <frame_system::Pallet<T>>::digest();
 		let pre_runtime_digests = digest.logs.iter().filter_map(|d| d.as_pre_runtime());
 
 		T::FindAuthor::find_author(pre_runtime_digests).unwrap_or_default()

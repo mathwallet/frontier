@@ -73,7 +73,7 @@ use frame_support::weights::{Weight, Pays, PostDispatchInfo};
 use frame_support::traits::{Currency, ExistenceRequirement, Get, WithdrawReasons, Imbalance, OnUnbalanced};
 use frame_support::dispatch::DispatchResultWithPostInfo;
 use frame_system::RawOrigin;
-use sp_core::{U256, H256, H160, Hasher};
+use sp_core::{U256, H256, H160};
 use sp_runtime::{AccountId32, traits::{UniqueSaturatedInto, BadOrigin, Saturating}};
 use evm::Config as EvmConfig;
 
@@ -304,7 +304,7 @@ decl_storage! {
 				// ASSUME: in one single EVM transaction, the nonce will not increase more than
 				// `u128::max_value()`.
 				for _ in 0..account.nonce.low_u128() {
-					frame_system::Module::<T>::inc_account_nonce(&account_id);
+					frame_system::Pallet::<T>::inc_account_nonce(&account_id);
 				}
 
 				T::Currency::deposit_creating(
@@ -540,7 +540,7 @@ impl<T: Config> Module<T> {
 	pub fn remove_account(address: &H160) {
 		if AccountCodes::contains_key(address) {
 			let account_id = T::AddressMapping::into_account_id(*address);
-			let _ = frame_system::Module::<T>::dec_consumers(&account_id);
+			let _ = frame_system::Pallet::<T>::dec_consumers(&account_id);
 		}
 
 		AccountCodes::remove(address);
@@ -555,7 +555,7 @@ impl<T: Config> Module<T> {
 
 		if !AccountCodes::contains_key(&address) {
 			let account_id = T::AddressMapping::into_account_id(address);
-			let _ = frame_system::Module::<T>::inc_consumers(&account_id);
+			let _ = frame_system::Pallet::<T>::inc_consumers(&account_id);
 		}
 
 		AccountCodes::insert(address, code);
@@ -565,7 +565,7 @@ impl<T: Config> Module<T> {
 	pub fn account_basic(address: &H160) -> Account {
 		let account_id = T::AddressMapping::into_account_id(*address);
 
-		let nonce = frame_system::Module::<T>::account_nonce(&account_id);
+		let nonce = frame_system::Pallet::<T>::account_nonce(&account_id);
 		let balance = T::Currency::free_balance(&account_id);
 
 		Account {

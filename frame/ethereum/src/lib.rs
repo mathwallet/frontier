@@ -87,7 +87,7 @@ impl Get<H256> for IntermediateStateRoot {
 }
 
 /// Configuration trait for Ethereum pallet.
-pub trait Config: frame_system::Config<Hash=H256> + pallet_balances::Config + pallet_timestamp::Config + pallet_evm::Config {
+pub trait Config: frame_system::Config<Hash=H256> + pallet_timestamp::Config + pallet_evm::Config {
 	/// The overarching event type.
 	type Event: From<Event> + Into<<Self as frame_system::Config>::Event>;
 	/// Find author for Ethereum.

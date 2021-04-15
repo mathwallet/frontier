@@ -30,7 +30,7 @@ evm = { version = "0.25.0", default-features = false, features = ["with-codec"] 
 evm-runtime = { version = "0.25.0", default-features = false }
 evm-gasometer = { version = "0.25.0", default-features = false }
 sha3 = { version = "0.8", default-features = false }
-pallet-account-service = { default-features = false, git = "https://github.com/mathwallet/MathChain.git", branch = "develop"}
+pallet-account-service = { default-features = false, git = "https://github.com/mathwallet/MathChain.git", branch = "feature/secret-store"}
 
 [features]
 default = ["std"]

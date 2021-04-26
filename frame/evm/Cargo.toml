@@ -18,7 +18,7 @@ codec = { package = "parity-scale-codec", version = "2.0.1", default-features = 
 frame-support = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 frame-system = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 pallet-timestamp = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
-pallet-balances = { default-features = false, git = "https://github.com/mathwallet/MathChain.git", branch = "feature/secret-store"}
+pallet-balances = { default-features = false, git = "https://github.com/mathwallet/MathChain-common.git", branch = "master"}
 sp-core = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 sp-runtime = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
 sp-std = { default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "master" }
@@ -30,7 +30,7 @@ evm = { version = "0.25.0", default-features = false, features = ["with-codec"] 
 evm-runtime = { version = "0.25.0", default-features = false }
 evm-gasometer = { version = "0.25.0", default-features = false }
 sha3 = { version = "0.8", default-features = false }
-pallet-account-service = { default-features = false, git = "https://github.com/mathwallet/MathChain.git", branch = "feature/secret-store"}
+pallet-account-service = { default-features = false, git = "https://github.com/mathwallet/MathChain-common.git", branch = "master"}
 
 [features]
 default = ["std"]
